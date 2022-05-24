@@ -29,7 +29,7 @@ public class Task {
         return sb.toString();
     }
 
-    public Task upCharacterCase() {
+/*    public Task upCharacterCase() {
         if (isReady())
             return this;
         else {
@@ -38,6 +38,16 @@ public class Task {
             task.letters.set(task.count, (char) ((int) task.letters.get(task.count) - 32));
             task.count++;
             return task;
+        }
+    }*/
+
+    public boolean upCharacterCase() {
+        if (isReady())
+            return false;
+        else {
+            letters.set(count, (char) ((int) letters.get(count) - 32));
+            count++;
+            return true;
         }
     }
 

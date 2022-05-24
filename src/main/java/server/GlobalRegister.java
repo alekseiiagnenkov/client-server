@@ -4,14 +4,13 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Getter
 public class GlobalRegister {
 
     private static final ConcurrentLinkedQueue<Task> taskList = new ConcurrentLinkedQueue<>();
-    //private static final ConcurrentLinkedQueue<Task> processingList = new ConcurrentLinkedQueue<>();
+
     private static final ConcurrentLinkedQueue<Task> resultList = new ConcurrentLinkedQueue<>();
 
     private final List<Handler> handlerList;
@@ -30,7 +29,6 @@ public class GlobalRegister {
 
     public void refresh() {
         taskList.clear();
-        //processingList.clear();
         resultList.clear();
     }
 
@@ -42,49 +40,38 @@ public class GlobalRegister {
 
             Handler handler = new Handler() {
 
-/*                private Handler next;
-                private Task currentTask;
-
-                public Handler getNext() {
-                    return next;
-                }
-
-                public Task getCurrentTask() {
-                    return currentTask;
-                }
-
-                public void setNext(Handler next) {
-                    this.next = next;
-                }
-
-                public void setCurrentTask(Task currentTask) {
-                    this.currentTask = currentTask;
-                }*/
-
                 @Override
                 public void run() {
                     while (true) {
                         try {
                             Task task = null;
-/*                            if (!processingList.isEmpty())
-                                task = processingList.remove();*/
-                            if (getCurrentTask() != null)
-                                task = getCurrentTask();
+                            if (currentTask != null) {
+                                task = currentTask;
+                                currentTask = null;
+                            }
 
-                            else if (!taskList.isEmpty())
+                            else if (!taskList.isEmpty() && !newTask)
                                 task = taskList.remove();
 
                             if (task != null) {
                                 if (!task.isBlock()) {
                                     task.setBlock(true);
                                     if (!task.isReady()) {
-                                        Task newTask = task.upCharacterCase();
-                                        System.out.println("[" + Thread.currentThread().getName() + "] Handler #" + id + ": " + newTask.getCommand());
+/*                                        Task task1 = task.upCharacterCase();
+                                        System.out.println("[" + Thread.currentThread().getName() + "] Handler #" + id + ": " + task1.getCommand());
 
-                                        task.setBlock(false);
-                                        getNext().setCurrentTask(newTask);
-                                        setCurrentTask(null);
-                                        //processingList.add(newTask);
+                                        Handler next = getNext();
+                                        next.newTask = true;
+                                        while (next.currentTask != null) {}
+                                        next.currentTask = task1;*/
+                                        task.upCharacterCase();
+                                        System.out.println("[" + Thread.currentThread().getName() + "] Handler #" + id + ": " + task.getCommand());
+
+                                        Handler next = getNext();
+                                        next.newTask = true;
+                                        while (next.currentTask != null) {}
+                                        next.currentTask = task;
+                                        next.newTask = false;
                                     } else {
                                         resultList.add(task);
                                     }
@@ -98,8 +85,6 @@ public class GlobalRegister {
             };
 
             registrationOne(handler);
-            //handlerList.add(handler);
-
         }
     }
 
@@ -109,15 +94,11 @@ public class GlobalRegister {
 
     private void registrationOne(Handler handler) {
         if (handlerList.size() < countOfHandlers) {
-            if (handlerList.size() > 0) {
+            if (!handlerList.isEmpty()) {
                 handlerList.get(handlerList.size() - 1).setNext(handler);
                 handler.setNext(handlerList.get(0));
             }
             handlerList.add(handler);
         }
-    }
-
-    public static Queue<Task> getResultList() {
-        return resultList;
     }
 }
