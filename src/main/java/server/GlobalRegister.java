@@ -2,93 +2,122 @@ package server;
 
 import lombok.Getter;
 
-import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Getter
 public class GlobalRegister {
 
-    private final ServerSocket registerSocket; // серверсокет
-    private Socket handlerSocket; //сокет для общения c клиентом
-    private BufferedReader reader; // поток чтения из сокета
-    private BufferedWriter writer; // поток записи в сокет
+    private static final ConcurrentLinkedQueue<Task> taskList = new ConcurrentLinkedQueue<>();
+    //private static final ConcurrentLinkedQueue<Task> processingList = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<Task> resultList = new ConcurrentLinkedQueue<>();
+
     private final List<Handler> handlerList;
-    private final int maxSize;
-
-    private final Queue<Task> taskList;
-
-    private final Queue<Task> resultList;
+    private final int countOfHandlers;
 
     public void addTask(String task) {
         taskList.add(new Task(task));
     }
 
-    public GlobalRegister(int countOfHandlers) throws IOException {
-        taskList = new LinkedList<>();
-        resultList = new LinkedList<>();
+    public String getResult() {
+        if (resultList.isEmpty()) {
+            return null;
+        }
+        return resultList.remove().getCommand();
+    }
 
-        registerSocket = new ServerSocket(4003, 1); // серверсокет прослушивает порт 4003
-        reader = new BufferedReader(new InputStreamReader(handlerSocket.getInputStream()));
-        writer = new BufferedWriter(new OutputStreamWriter(handlerSocket.getOutputStream()));
+    public void refresh() {
+        taskList.clear();
+        //processingList.clear();
+        resultList.clear();
+    }
 
+    public GlobalRegister(int countOfHandlers) {
+        this.countOfHandlers = countOfHandlers;
         handlerList = new ArrayList<>();
-        maxSize = countOfHandlers;
-        for (int i = 0; i < countOfHandlers; i++) {
-            int id = i;
+        for (int i = 0; i < this.countOfHandlers; i++) {
+            int id = i + 1;
 
             Handler handler = new Handler() {
+
+/*                private Handler next;
+                private Task currentTask;
+
+                public Handler getNext() {
+                    return next;
+                }
+
+                public Task getCurrentTask() {
+                    return currentTask;
+                }
+
+                public void setNext(Handler next) {
+                    this.next = next;
+                }
+
+                public void setCurrentTask(Task currentTask) {
+                    this.currentTask = currentTask;
+                }*/
+
                 @Override
                 public void run() {
                     while (true) {
-                        Task task = taskList.remove();
-                        if (task != null) {
-                            if (task.upCharacterCase()) {
-                                System.out.println("Обработчик #" + id + ": " + task.getCommand());
-                                taskList.add(task);
-                                //getNext().run();
-                            } else {
-                                resultList.add(task);
+                        try {
+                            Task task = null;
+/*                            if (!processingList.isEmpty())
+                                task = processingList.remove();*/
+                            if (getCurrentTask() != null)
+                                task = getCurrentTask();
+
+                            else if (!taskList.isEmpty())
+                                task = taskList.remove();
+
+                            if (task != null) {
+                                if (!task.isBlock()) {
+                                    task.setBlock(true);
+                                    if (!task.isReady()) {
+                                        Task newTask = task.upCharacterCase();
+                                        System.out.println("[" + Thread.currentThread().getName() + "] Handler #" + id + ": " + newTask.getCommand());
+
+                                        task.setBlock(false);
+                                        getNext().setCurrentTask(newTask);
+                                        setCurrentTask(null);
+                                        //processingList.add(newTask);
+                                    } else {
+                                        resultList.add(task);
+                                    }
+                                    task.setBlock(false);
+                                }
                             }
+                        } catch (Exception ignored) {
                         }
                     }
                 }
             };
 
-            if (!registrationOne(handler)) {
-                throw new RuntimeException("Ошибка заполнения глобального регистра!");
-            }
-        }
+            registrationOne(handler);
+            //handlerList.add(handler);
 
-        for (Handler handler : handlerList) {
-            new Thread(handler).start();
         }
     }
 
     public String getInfo() {
-        return "Количество зарегистрированных обработчиков = " + handlerList.size();
+        return "Number of registered handlers = " + handlerList.size();
     }
 
-    private boolean registrationOne(Handler handler) {
-        if (handlerList.size() < maxSize) {
+    private void registrationOne(Handler handler) {
+        if (handlerList.size() < countOfHandlers) {
             if (handlerList.size() > 0) {
                 handlerList.get(handlerList.size() - 1).setNext(handler);
                 handler.setNext(handlerList.get(0));
             }
             handlerList.add(handler);
-            return true;
         }
-        return false;
     }
 
-/*    public void registration(List<Handler> handlers) {
-        for (Handler handler : handlers)
-            if(!registrationOne(handler)){
-                throw new RuntimeException("Ошибка заполнения глобального регистра!");
-            }
-    }*/
+    public static Queue<Task> getResultList() {
+        return resultList;
+    }
 }

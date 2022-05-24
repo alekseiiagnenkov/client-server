@@ -5,6 +5,12 @@ import lombok.Getter;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
+
+import static client.Client.generateRandomString;
 
 @Getter
 public class Server {
@@ -18,31 +24,55 @@ public class Server {
     public static Server create() throws IOException {
         return new Server(4004, 1);
     }
+
     private Server(int port, int backlog) throws IOException {
         serverSocket = new ServerSocket(port, backlog); // серверсокет прослушивает порт 4004
-        globalRegister = new GlobalRegister(countOfHandlers);
+        globalRegister = new GlobalRegister(3);
     }
 
-    public void work() throws IOException {
-        clientSocket = serverSocket.accept();
-        reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-        try {
-            String request = getMessageByClient();
-            while (!"".equals(request)) {
-                System.out.println("Получена команда: " + request);
-                if (isCorrectCommand(request)) {
-                    globalRegister.addTask(request);
-                    //globalRegister.start();
-                    sendMessageToClient(globalRegister.getResultList().remove().getCommand());
-                } else {
-                    sendMessageToClient("Некорректная команда!");
+    public void work() {
+
+        List<Handler> list = globalRegister.getHandlerList();
+        for (Handler handler : list) {
+            new Thread(handler).start();
+        }
+
+        while (true) {
+            try {
+                globalRegister.refresh();
+
+                clientSocket = serverSocket.accept();
+                reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+
+                int countOfRequest = 0;
+                String request = getMessageByClient();
+                while (!"".equals(request)) {
+                    countOfRequest++;
+                    System.out.println("[" + Thread.currentThread().getName() + "] Command: " + request);
+                    if (isCorrectCommand(request)) {
+                        globalRegister.addTask(request);
+                    } else {
+                        sendMessageToClient("Uncorrected command!");
+                    }
+                    request = getMessageByClient();
                 }
-                request = getMessageByClient();
+
+                while (countOfRequest != 0) {
+                    String response = globalRegister.getResult();
+                    if (response != null) {
+                        System.out.println("---------------------------->" + response);
+                        sendMessageToClient(response);
+                        countOfRequest--;
+                    }
+                }
+
+                clientClose();
+
+            } catch (Exception e) {
+            } finally {
+                System.out.println("Communication with the client is completed!\n");
             }
-        } finally {
-            clientClose();
-            System.out.println("Общение с клиентом завершено!");
         }
     }
 
@@ -68,8 +98,7 @@ public class Server {
 
     private static boolean isCorrectCommand(String command) {
         for (int i = 0; i < command.length(); i++) {
-            if (command.charAt(i) < 97 || command.charAt(i) > 122)
-                return false;
+            if (command.charAt(i) < 97 || command.charAt(i) > 122) return false;
         }
         return true;
     }
