@@ -5,12 +5,7 @@ import lombok.Getter;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.Random;
-import java.util.Scanner;
-
-import static client.Client.generateRandomString;
 
 @Getter
 public class Server {
@@ -19,15 +14,14 @@ public class Server {
     private BufferedWriter writer; // поток записи в сокет
     private final ServerSocket serverSocket; // серверсокет
     private final GlobalRegister globalRegister;
-    private final static int countOfHandlers = 3;
 
-    public static Server create() throws IOException {
-        return new Server(4004, 1);
+    public static Server create(int countOfHandlers) throws IOException {
+        return new Server(4004, 1, countOfHandlers);
     }
 
-    private Server(int port, int backlog) throws IOException {
+    private Server(int port, int backlog, int countOfHandlers) throws IOException {
         serverSocket = new ServerSocket(port, backlog); // серверсокет прослушивает порт 4004
-        globalRegister = new GlobalRegister(3);
+        globalRegister = new GlobalRegister(countOfHandlers);
     }
 
     public void work() {
@@ -38,9 +32,10 @@ public class Server {
         }
 
         while (true) {
-            try {
-                globalRegister.refresh();
 
+            globalRegister.refresh();
+
+            try {
                 clientSocket = serverSocket.accept();
                 reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
@@ -61,7 +56,6 @@ public class Server {
                 while (countOfRequest != 0) {
                     String response = globalRegister.getResult();
                     if (response != null) {
-                        System.out.println("---------------------------->" + response);
                         sendMessageToClient(response);
                         countOfRequest--;
                     }
@@ -69,8 +63,7 @@ public class Server {
 
                 clientClose();
 
-            } catch (Exception e) {
-            } finally {
+            } catch (Exception ignored) {} finally {
                 System.out.println("Communication with the client is completed!\n");
             }
         }

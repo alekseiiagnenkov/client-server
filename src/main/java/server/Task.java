@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Setter
@@ -29,29 +30,22 @@ public class Task {
         return sb.toString();
     }
 
-/*    public Task upCharacterCase() {
-        if (isReady())
-            return this;
-        else {
-            Task task = new Task(this.getCommand());
-            task.count = count;
-            task.letters.set(task.count, (char) ((int) task.letters.get(task.count) - 32));
-            task.count++;
-            return task;
-        }
-    }*/
-
-    public boolean upCharacterCase() {
-        if (isReady())
-            return false;
-        else {
+    public void upCharacterCase() {
+        if (!isReady()) {
             letters.set(count, (char) ((int) letters.get(count) - 32));
             count++;
-            return true;
         }
     }
 
     public boolean isReady() {
         return count == letters.size();
+    }
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "letters=" + Arrays.toString(letters.toArray()) +
+                ", count=" + count +
+                '}';
     }
 }
