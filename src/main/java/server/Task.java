@@ -30,8 +30,9 @@ public class Task {
         return sb.toString();
     }
 
-    public void upCharacterCase() {
+    public void upCharacterCase() throws InterruptedException {
         if (!isReady()) {
+            //Thread.sleep(100);
             letters.set(count, (char) ((int) letters.get(count) - 32));
             count++;
         }
