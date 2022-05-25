@@ -7,17 +7,17 @@ import lombok.Setter;
 @Getter
 public abstract class Handler implements Runnable {
 
-    protected Handler next = null;
+/*    protected Handler next = null;
 
     protected Task currentTask = null;
 
-    protected boolean newTask = false;
+    protected boolean newTask = false;*/
 
-    @Override
+/*    @Override
     public String toString() {
         return
                 "{ currentTask=" + currentTask +
                 ", newTask=" + newTask +
                 '}';
-    }
+    }*/
 }

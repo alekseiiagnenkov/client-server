@@ -40,11 +40,13 @@ public class Server {
                 reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
+                long time = System.currentTimeMillis();
+
                 int countOfRequest = 0;
                 String request = getMessageByClient();
                 while (!"".equals(request)) {
                     countOfRequest++;
-                    System.out.println("[" + Thread.currentThread().getName() + "] Command: " + request);
+                    //System.out.println("[" + Thread.currentThread().getName() + "] Command: " + request);
                     if (isCorrectCommand(request)) {
                         globalRegister.addTask(request);
                     } else {
@@ -53,6 +55,8 @@ public class Server {
                     request = getMessageByClient();
                 }
 
+                System.out.println("Time1:"+(System.currentTimeMillis() - time));
+
                 while (countOfRequest != 0) {
                     String response = globalRegister.getResult();
                     if (response != null) {
@@ -60,6 +64,8 @@ public class Server {
                         countOfRequest--;
                     }
                 }
+
+                System.out.println("Time2:"+(System.currentTimeMillis() - time));
 
                 clientClose();
 

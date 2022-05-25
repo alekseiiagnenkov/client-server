@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class GlobalRegister {
 
     private static final ConcurrentLinkedQueue<Task> taskList = new ConcurrentLinkedQueue<>();
-
+    private static final ConcurrentLinkedQueue<Task> processList = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Task> resultList = new ConcurrentLinkedQueue<>();
 
     private final List<Handler> handlerList;
@@ -29,37 +29,41 @@ public class GlobalRegister {
                 @Override
                 public void run() {
                     while (true) {
-                        try {
-                            Task task = getTask();
-                            if (task != null) {
-                                if (!task.isReady()) {
-                                    task.upCharacterCase();
-                                    System.out.println("[" + Thread.currentThread().getName() + "] Handler #" + id + ": " + task.getCommand());
-                                    sentToNextHandler(task);
-                                } else {
-                                    resultList.add(task);
-                                }
+
+                        Task task = getTask();
+                        if (task != null) {
+                            if (!task.isReady()) {
+                                task.upCharacterCase();
+                                //System.out.println("[" + Thread.currentThread().getName() + "] Handler #" + id + ": " + task.getCommand());
+                                sentToNextHandler(task);
+                            } else {
+                                resultList.add(task);
                             }
-                        } catch (Exception ignored) {}
+
+                        }
                     }
                 }
 
                 private Task getTask() {
                     Task task = null;
-                    if (currentTask != null) {
+/*                    if (currentTask != null) {
                         task = currentTask;
-                        currentTask = null;
-                    } else if (!taskList.isEmpty() && !newTask)
-                        task = taskList.remove();
+                        currentTask = null;*/
+                        if (!processList.isEmpty()) {
+                            task = processList.poll();
+                        } else if (!taskList.isEmpty()/* && !newTask*/)
+                            task = taskList.poll();
                     return task;
                 }
 
                 private void sentToNextHandler(Task task) {
-                    Handler next = getNext();
+/*                    Handler next = getNext();
                     next.newTask = true;
-                    while (next.currentTask != null) {}
+                    while (next.currentTask != null) {
+                    }
                     next.currentTask = task;
-                    next.newTask = false;
+                    next.newTask = false;*/
+                    processList.add(task);
                 }
             };
 
@@ -86,18 +90,18 @@ public class GlobalRegister {
         taskList.clear();
         resultList.clear();
 
-        for (Handler handler : handlerList) {
+/*        for (Handler handler : handlerList) {
             handler.newTask = false;
             handler.currentTask = null;
-        }
+        }*/
     }
 
     private void registrationOne(Handler handler) {
         if (handlerList.size() < countOfHandlers) {
-            if (!handlerList.isEmpty()) {
+/*            if (!handlerList.isEmpty()) {
                 handlerList.get(handlerList.size() - 1).setNext(handler);
                 handler.setNext(handlerList.get(0));
-            }
+            }*/
             handlerList.add(handler);
         }
     }
