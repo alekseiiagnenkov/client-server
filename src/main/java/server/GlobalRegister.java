@@ -38,7 +38,7 @@ public class GlobalRegister {
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
-                                //System.out.println("[" + Thread.currentThread().getName() + "] Handler #" + id + ": " + task.getCommand());
+                                System.out.println("[" + Thread.currentThread().getName() + "] Handler #" + id + ": " + task.getCommand());
                                 sentToNextHandler(task);
                             } else {
                                 resultList.add(task);

@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public abstract class Handler implements Runnable {
+public abstract class Handler implements Runnable {}
 
 /*    protected Handler next = null;
 
@@ -20,4 +20,4 @@ public abstract class Handler implements Runnable {
                 ", newTask=" + newTask +
                 '}';
     }*/
-}
+//}

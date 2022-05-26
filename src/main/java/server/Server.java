@@ -46,7 +46,7 @@ public class Server {
                 String request = getMessageByClient();
                 while (!"".equals(request)) {
                     countOfRequest++;
-                    //System.out.println("[" + Thread.currentThread().getName() + "] Command: " + request);
+                    System.out.println("[" + Thread.currentThread().getName() + "] Command: " + request);
                     if (isCorrectCommand(request)) {
                         globalRegister.addTask(request);
                     } else {
